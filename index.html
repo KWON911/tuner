@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>크로매틱 튜너</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --panel: #111420;
+    --border: #1e2440;
+    --accent: #00e5ff;
+    --green: #00ff88;
+    --red: #ff3860;
+    --yellow: #ffe040;
+    --text: #c8d0e8;
+    --dim: #3a4060;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(0,229,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.03) 0%, transparent 50%);
+  }
+
+  h1 {
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.3em;
+    font-size: 0.75rem;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    padding: 6px 18px;
+    border-radius: 2px;
+  }
+
+  .tuner-wrap {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Note display */
+  .note-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px 20px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .note-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.6;
+  }
+
+  .note-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 5rem;
+    line-height: 1;
+    letter-spacing: -2px;
+    color: var(--accent);
+    transition: color 0.15s;
+    text-shadow: 0 0 30px rgba(0,229,255,0.4);
+  }
+  .note-name.in-tune { color: var(--green); text-shadow: 0 0 30px rgba(0,255,136,0.4); }
+  .note-name.flat { color: var(--yellow); text-shadow: 0 0 30px rgba(255,224,64,0.3); }
+  .note-name.sharp { color: var(--red); text-shadow: 0 0 30px rgba(255,56,96,0.3); }
+  .note-name.silent { color: var(--dim); text-shadow: none; }
+
+  .octave {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.4rem;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+
+  .freq-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--dim);
+    margin-top: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Needle meter */
+  .meter-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 20px 14px;
+  }
+
+  .meter-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .meter-track {
+    position: relative;
+    height: 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    overflow: visible;
+    border: 1px solid var(--border);
+  }
+
+  /* Colored zones */
+  .meter-track::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+      rgba(255,56,96,0.3) 0%,
+      rgba(255,224,64,0.2) 30%,
+      rgba(0,255,136,0.4) 45%,
+      rgba(0,255,136,0.4) 55%,
+      rgba(255,224,64,0.2) 70%,
+      rgba(255,56,96,0.3) 100%
+    );
+  }
+
+  /* Center line */
+  .meter-center {
+    position: absolute;
+    top: -4px; bottom: -4px;
+    left: 50%;
+    width: 2px;
+    background: var(--accent);
+    transform: translateX(-50%);
+    border-radius: 1px;
+    opacity: 0.5;
+  }
+
+  /* Needle */
+  .meter-needle {
+    position: absolute;
+    top: -6px;
+    width: 4px;
+    height: 24px;
+    background: white;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    left: 50%;
+    transition: left 0.08s ease-out, background 0.15s;
+    box-shadow: 0 0 8px rgba(255,255,255,0.6);
+  }
+  .meter-needle.in-tune { background: var(--green); box-shadow: 0 0 10px rgba(0,255,136,0.8); }
+  .meter-needle.flat { background: var(--yellow); }
+  .meter-needle.sharp { background: var(--red); }
+
+  .cents-display {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    margin-top: 10px;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* Chromatic keyboard */
+  .keyboard-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .key-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--dim);
+    cursor: default;
+    letter-spacing: 0.05em;
+    transition: all 0.1s;
+    min-width: 30px;
+    text-align: center;
+  }
+  .key-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.08);
+    box-shadow: 0 0 10px rgba(0,229,255,0.2);
+  }
+  .key-btn.active.in-tune {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(0,255,136,0.1);
+    box-shadow: 0 0 10px rgba(0,255,136,0.3);
+  }
+
+  /* Control button */
+  .btn-start {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-start:hover { background: rgba(0,229,255,0.08); }
+  .btn-start.active {
+    border-color: var(--red);
+    color: var(--red);
+    background: rgba(255,56,96,0.05);
+  }
+  .btn-start.active:hover { background: rgba(255,56,96,0.1); }
+
+  /* Volume bar */
+  .vol-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .vol-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .vol-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .vol-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 3px;
+    transition: width 0.05s;
+  }
+
+  .status-msg {
+    font-size: 0.7rem;
+    color: var(--dim);
+    text-align: center;
+    letter-spacing: 0.05em;
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 1.2em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Chromatic Tuner</h1>
+
+<div class="tuner-wrap">
+
+  <div class="note-panel">
+    <div class="note-name silent" id="noteName">—</div>
+    <div class="octave" id="octave"></div>
+    <div class="freq-display" id="freqDisplay">— Hz</div>
+  </div>
+
+  <div class="meter-panel">
+    <div class="meter-label">
+      <span>♭ -50</span>
+      <span>튜닝</span>
+      <span>+50 ♯</span>
+    </div>
+    <div class="meter-track">
+      <div class="meter-center"></div>
+      <div class="meter-needle" id="needle"></div>
+    </div>
+    <div class="cents-display" id="centsDisplay">— ¢</div>
+  </div>
+
+  <div class="vol-panel">
+    <span class="vol-label">입력 레벨</span>
+    <div class="vol-track"><div class="vol-fill" id="volFill"></div></div>
+  </div>
+
+  <div class="keyboard-panel" id="keyboard"></div>
+
+  <button class="btn-start" id="startBtn" onclick="toggleTuner()">▶ 마이크 시작</button>
+  <div class="status-msg" id="status">버튼을 눌러 마이크를 활성화하세요</div>
+
+</div>
+
+<script>
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const A4 = 440;
+
+// Build keyboard
+const kb = document.getElementById('keyboard');
+NOTES.forEach(n => {
+  const btn = document.createElement('div');
+  btn.className = 'key-btn';
+  btn.textContent = n;
+  btn.id = 'key-' + n.replace('#','s');
+  kb.appendChild(btn);
+});
+
+let audioCtx = null, analyser = null, stream = null, rafId = null;
+let isRunning = false;
+
+function toggleTuner() {
+  if (isRunning) stopTuner();
+  else startTuner();
+}
+
+async function startTuner() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0.6;
+    const src = audioCtx.createMediaStreamSource(stream);
+    src.connect(analyser);
+    isRunning = true;
+    document.getElementById('startBtn').textContent = '■ 중지';
+    document.getElementById('startBtn').classList.add('active');
+    document.getElementById('status').textContent = '실시간 음정 감지 중...';
+    rafId = requestAnimationFrame(analyze);
+  } catch(e) {
+    document.getElementById('status').textContent = '마이크 접근 실패: ' + e.message;
+  }
+}
+
+function stopTuner() {
+  isRunning = false;
+  cancelAnimationFrame(rafId);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (audioCtx) audioCtx.close();
+  document.getElementById('startBtn').textContent = '▶ 마이크 시작';
+  document.getElementById('startBtn').classList.remove('active');
+  document.getElementById('status').textContent = '버튼을 눌러 마이크를 활성화하세요';
+  resetDisplay();
+}
+
+function resetDisplay() {
+  document.getElementById('noteName').textContent = '—';
+  document.getElementById('noteName').className = 'note-name silent';
+  document.getElementById('octave').textContent = '';
+  document.getElementById('freqDisplay').textContent = '— Hz';
+  document.getElementById('centsDisplay').textContent = '— ¢';
+  document.getElementById('needle').style.left = '50%';
+  document.getElementById('needle').className = 'meter-needle';
+  document.getElementById('volFill').style.width = '0%';
+  NOTES.forEach(n => {
+    const el = document.getElementById('key-' + n.replace('#','s'));
+    if (el) el.className = 'key-btn';
+  });
+}
+
+function analyze() {
+  if (!isRunning) return;
+  rafId = requestAnimationFrame(analyze);
+
+  const bufLen = analyser.fftSize;
+  const buf = new Float32Array(bufLen);
+  analyser.getFloatTimeDomainData(buf);
+
+  // Volume RMS
+  let rms = 0;
+  for (let i = 0; i < bufLen; i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / bufLen);
+  const vol = Math.min(100, rms * 500);
+  document.getElementById('volFill').style.width = vol + '%';
+
+  if (rms < 0.005) { // silence threshold
+    resetDisplay();
+    document.getElementById('status').textContent = '실시간 음정 감지 중...';
+    return;
+  }
+
+  // Pitch detection via autocorrelation
+  const freq = autoCorrelate(buf, audioCtx.sampleRate);
+  if (!freq) return;
+
+  // Note calculation
+  const noteNum = 12 * (Math.log2(freq / A4)) + 69;
+  const roundedNote = Math.round(noteNum);
+  const cents = Math.round((noteNum - roundedNote) * 100);
+  const noteIdx = ((roundedNote % 12) + 12) % 12;
+  const octave = Math.floor(roundedNote / 12) - 1;
+  const noteName = NOTES[noteIdx];
+
+  // Determine tune state
+  let state = 'off';
+  if (Math.abs(cents) <= 5) state = 'in-tune';
+  else if (cents < 0) state = 'flat';
+  else state = 'sharp';
+
+  // Update note display
+  const nameEl = document.getElementById('noteName');
+  nameEl.textContent = noteName;
+  nameEl.className = 'note-name ' + state;
+  document.getElementById('octave').textContent = octave;
+  document.getElementById('freqDisplay').textContent = freq.toFixed(1) + ' Hz';
+
+  // Update cents
+  const centsEl = document.getElementById('centsDisplay');
+  centsEl.textContent = (cents >= 0 ? '+' : '') + cents + ' ¢';
+
+  // Needle (50% = center, range 0–100%)
+  const needlePct = 50 + (cents / 50) * 50;
+  const clampedPct = Math.max(2, Math.min(98, needlePct));
+  const needleEl = document.getElementById('needle');
+  needleEl.style.left = clampedPct + '%';
+  needleEl.className = 'meter-needle ' + state;
+
+  // Keyboard highlight
+  NOTES.forEach(n => {
+    const el = document.getElementById('key-' + n.replace('#','s'));
+    if (!el) return;
+    if (n === noteName) {
+      el.className = 'key-btn active' + (state === 'in-tune' ? ' in-tune' : '');
+    } else {
+      el.className = 'key-btn';
+    }
+  });
+
+  document.getElementById('status').textContent =
+    state === 'in-tune' ? '✓ 정확한 음정입니다!' :
+    state === 'flat' ? '♭ 음이 낮습니다' : '♯ 음이 높습니다';
+}
+
+// Autocorrelation pitch detection
+function autoCorrelate(buf, sampleRate) {
+  const SIZE = buf.length;
+  let rms = 0;
+  for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.005) return null;
+
+  let r1 = 0, r2 = SIZE - 1;
+  const thres = 0.2;
+  for (let i = 0; i < SIZE / 2; i++) { if (Math.abs(buf[i]) < thres) { r1 = i; break; } }
+  for (let i = 1; i < SIZE / 2; i++) { if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; } }
+
+  const sliced = buf.slice(r1, r2);
+  const len = sliced.length;
+  const c = new Float32Array(len);
+
+  for (let i = 0; i < len; i++) {
+    for (let j = 0; j < len - i; j++) {
+      c[i] += sliced[j] * sliced[j + i];
+    }
+  }
+
+  let d = 0;
+  while (c[d] > c[d + 1]) d++;
+  let maxval = -1, maxpos = -1;
+  for (let i = d; i < len; i++) {
+    if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+  }
+  let T0 = maxpos;
+  const x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+  const a = (x1 + x3 - 2 * x2) / 2;
+  const b = (x3 - x1) / 2;
+  if (a) T0 = T0 - b / (2 * a);
+
+  const freq = sampleRate / T0;
+  // Only return if in musical range (50–2000 Hz)
+  if (freq < 50 || freq > 2000) return null;
+  return freq;
+}
+</script>
+</body>
+</html>
