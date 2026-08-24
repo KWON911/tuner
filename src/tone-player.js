@@ -25,7 +25,12 @@ export function createTonePlayer(context) {
     stop();
 
     const now = context.currentTime;
-    const end = now + durationMs / 1000;
+    const totalSec = durationMs / 1000;
+    const end = now + totalSec;
+
+    // Clamp attack and release to fit within available duration
+    const attack = Math.min(ATTACK_SEC, totalSec / 2);
+    const release = Math.min(RELEASE_SEC, totalSec / 2);
 
     oscillator = context.createOscillator();
     gain = context.createGain();
@@ -34,8 +39,8 @@ export function createTonePlayer(context) {
     oscillator.frequency.setValueAtTime(frequency, now);
 
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(PEAK_GAIN, now + ATTACK_SEC);
-    gain.gain.setValueAtTime(PEAK_GAIN, end - RELEASE_SEC);
+    gain.gain.linearRampToValueAtTime(PEAK_GAIN, now + attack);
+    gain.gain.setValueAtTime(PEAK_GAIN, end - release);
     gain.gain.linearRampToValueAtTime(0, end);
 
     oscillator.connect(gain).connect(context.destination);
