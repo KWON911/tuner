@@ -97,17 +97,27 @@ export function createAudioEngine({
 
     worker = createWorker();
     if (worker) {
+      // worker.onmessage/onerror는 클로저로 캡처한 thisWorker와 현재의
+      // worker(모듈 상태)가 같은 인스턴스일 때만 처리한다. stop() 직후 start()가
+      // 다시 호출되면 새 worker가 생기는데, 방금 terminate()된 이전 worker가
+      // terminate 직전에 이미 postMessage해둔 결과가 뒤늦게 도착할 수 있다.
+      // running만 검사하면 그 시점엔 새 세션이 running=true라 통과해버려서
+      // 오래된 결과가 현재 세션의 onResult로 새어 들어간다. 인스턴스 동일성을
+      // 함께 검사하면 그 메시지는 thisWorker !== worker(새 worker)이므로 걸러진다.
+      const thisWorker = worker;
       worker.onmessage = (event) => {
+        if (worker !== thisWorker) return;
         pending = false;
         if (running) onResult?.(event.data);
       };
       worker.onerror = () => {
+        if (worker !== thisWorker) return;
         onError?.({
           level: 'warn',
           code: 'WORKER_ERROR',
           message: '백그라운드 검출이 중단되어 메인 스레드로 전환합니다.',
         });
-        worker.terminate();
+        thisWorker.terminate();
         worker = null;
         pending = false;
       };
