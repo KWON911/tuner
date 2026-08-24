@@ -1,0 +1,415 @@
+  :root {
+    --bg: #0a0c10;
+    --panel: #111420;
+    --border: #1e2440;
+    --accent: #00e5ff;
+    --green: #00ff88;
+    --red: #ff3860;
+    --yellow: #ffe040;
+    --text: #c8d0e8;
+    --dim: #3a4060;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(0,229,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.03) 0%, transparent 50%);
+  }
+
+  h1 {
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.3em;
+    font-size: 0.75rem;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    padding: 6px 18px;
+    border-radius: 2px;
+  }
+
+  .tuner-wrap {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Note display */
+  .note-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px 20px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .note-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.6;
+  }
+
+  .note-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 5rem;
+    line-height: 1;
+    letter-spacing: -2px;
+    color: var(--accent);
+    transition: color 0.15s;
+    text-shadow: 0 0 30px rgba(0,229,255,0.4);
+  }
+  .note-name.in-tune { color: var(--green); text-shadow: 0 0 30px rgba(0,255,136,0.4); }
+  .note-name.flat { color: var(--yellow); text-shadow: 0 0 30px rgba(255,224,64,0.3); }
+  .note-name.sharp { color: var(--red); text-shadow: 0 0 30px rgba(255,56,96,0.3); }
+  .note-name.silent { color: var(--dim); text-shadow: none; }
+
+  .octave {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.4rem;
+    color: var(--dim);
+    margin-top: 4px;
+  }
+
+  .freq-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--dim);
+    margin-top: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Needle meter */
+  .meter-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 20px 14px;
+  }
+
+  .meter-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .meter-track {
+    position: relative;
+    height: 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    overflow: visible;
+    border: 1px solid var(--border);
+  }
+
+  /* Colored zones */
+  .meter-track::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+      rgba(255,56,96,0.3) 0%,
+      rgba(255,224,64,0.2) 30%,
+      rgba(0,255,136,0.4) 45%,
+      rgba(0,255,136,0.4) 55%,
+      rgba(255,224,64,0.2) 70%,
+      rgba(255,56,96,0.3) 100%
+    );
+  }
+
+  /* Center line */
+  .meter-center {
+    position: absolute;
+    top: -4px; bottom: -4px;
+    left: 50%;
+    width: 2px;
+    background: var(--accent);
+    transform: translateX(-50%);
+    border-radius: 1px;
+    opacity: 0.5;
+  }
+
+  /* Needle */
+  .meter-needle {
+    position: absolute;
+    top: -6px;
+    width: 4px;
+    height: 24px;
+    background: white;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    left: 50%;
+    transition: left 0.08s ease-out, background 0.15s;
+    box-shadow: 0 0 8px rgba(255,255,255,0.6);
+  }
+  .meter-needle.in-tune { background: var(--green); box-shadow: 0 0 10px rgba(0,255,136,0.8); }
+  .meter-needle.flat { background: var(--yellow); }
+  .meter-needle.sharp { background: var(--red); }
+
+  .cents-display {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    margin-top: 10px;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* Chromatic keyboard */
+  .keyboard-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .key-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--dim);
+    cursor: default;
+    letter-spacing: 0.05em;
+    transition: all 0.1s;
+    min-width: 30px;
+    text-align: center;
+  }
+  .key-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.08);
+    box-shadow: 0 0 10px rgba(0,229,255,0.2);
+  }
+  .key-btn.active.in-tune {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(0,255,136,0.1);
+    box-shadow: 0 0 10px rgba(0,255,136,0.3);
+  }
+
+  /* Control button */
+  .btn-start {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-start:hover { background: rgba(0,229,255,0.08); }
+  .btn-start.active {
+    border-color: var(--red);
+    color: var(--red);
+    background: rgba(255,56,96,0.05);
+  }
+  .btn-start.active:hover { background: rgba(255,56,96,0.1); }
+
+  /* Volume bar */
+  .vol-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .vol-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .vol-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .vol-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 3px;
+    transition: width 0.05s;
+  }
+
+  .status-msg {
+    font-size: 0.7rem;
+    color: var(--dim);
+    text-align: center;
+    letter-spacing: 0.05em;
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 1.2em;
+  }
+
+/* ---------- 컨트롤 패널 ---------- */
+
+.controls-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--dim);
+  text-transform: uppercase;
+  flex: 0 0 60px;
+}
+
+.control-select {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.control-slider {
+  flex: 1;
+  accent-color: var(--accent);
+  min-width: 0;
+}
+
+.control-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text);
+  flex: 0 0 66px;
+  text-align: right;
+}
+
+.control-value.adjusted {
+  color: var(--yellow);
+}
+
+.control-reset {
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.control-reset:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---------- 줄 목록 (프리셋 선택 시 키보드 자리) ---------- */
+
+.string-btn {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 10px 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.string-btn:hover {
+  border-color: var(--accent);
+}
+
+.string-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.string-btn.active.in-tune {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+/* 키를 button으로 만들기 때문에 브라우저 기본 스타일을 눌러준다 */
+.key-btn {
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ---------- 안내 문구 ---------- */
+
+.feedback-warning,
+.file-banner {
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.feedback-warning {
+  border: 1px solid var(--border);
+  color: var(--dim);
+}
+
+.file-banner {
+  border: 1px solid var(--yellow);
+  color: var(--yellow);
+}
+
+.feedback-warning[hidden],
+.file-banner[hidden] {
+  display: none;
+}
