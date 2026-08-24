@@ -24,7 +24,7 @@ export function detectPitch(buffer, sampleRate, options = {}) {
 
   const autocorr = autocorrelate(buffer, n);
 
-  const maxLag = Math.min(n - 2, Math.ceil(sampleRate / opts.minFrequency));
+  const maxLag = Math.min(n - 2, Math.ceil(sampleRate / opts.minFrequency) + 2);
   const minLag = Math.max(1, Math.floor(sampleRate / opts.maxFrequency));
   if (maxLag <= minLag + 2) return null;
 
@@ -47,7 +47,9 @@ export function detectPitch(buffer, sampleRate, options = {}) {
   if (clarity < opts.clarityThreshold) return null;
 
   const frequency = sampleRate / position;
-  if (frequency < opts.minFrequency || frequency > opts.maxFrequency) return null;
+  // Allow 0.5 Hz tolerance at boundaries for interpolation overshoot
+  const epsilon = 0.5;
+  if (frequency < opts.minFrequency - epsilon || frequency > opts.maxFrequency + epsilon) return null;
 
   return { frequency, clarity };
 }

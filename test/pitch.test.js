@@ -85,3 +85,17 @@ test('clarity는 0과 1 사이이며 깨끗한 사인에서 높다', () => {
 test('버퍼가 너무 짧으면 null', () => {
   assert.equal(detectPitch(new Float32Array(1), SAMPLE_RATE), null);
 });
+
+test('검출 범위의 경계값 (50 Hz, 2000 Hz)을 ±1 cent 이내로 검출', () => {
+  // Lower boundary: 50 Hz (minFrequency)
+  const result50 = detectPitch(synth(50), SAMPLE_RATE);
+  assert.ok(result50, '50Hz 검출 실패');
+  const err50 = centsBetween(result50.frequency, 50);
+  assert.ok(Math.abs(err50) <= 1, `50Hz -> ${result50.frequency.toFixed(3)}Hz (${err50.toFixed(2)} cent)`);
+
+  // Upper boundary: 2000 Hz (maxFrequency)
+  const result2000 = detectPitch(synth(2000), SAMPLE_RATE);
+  assert.ok(result2000, '2000Hz 검출 실패');
+  const err2000 = centsBetween(result2000.frequency, 2000);
+  assert.ok(Math.abs(err2000) <= 1, `2000Hz -> ${result2000.frequency.toFixed(3)}Hz (${err2000.toFixed(2)} cent)`);
+});
