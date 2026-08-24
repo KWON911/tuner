@@ -24,6 +24,7 @@
 ## 비목표
 
 - 빌드 도구(번들러) 도입. `npm`/Vite 없이 브라우저가 직접 읽는 ES 모듈로 유지한다.
+  단, `package.json`은 추가한다. `node --test`가 `.js` 파일을 ES 모듈로 읽으려면 `"type": "module"`이 필요하기 때문이다. `dependencies`는 비어 있고 설치 단계도 없으므로 빌드 도구 도입에 해당하지 않는다. 브라우저는 `package.json`을 보지 않는다.
 - 설정의 영속 저장(localStorage). 이번 범위에서 제외한다.
 - 마이크 이외의 입력 소스(파일, 라인 입력).
 
@@ -34,6 +35,7 @@
 ## 파일 구조
 
 ```
+package.json           node의 ESM 해석 + 테스트 스크립트 (의존성 없음)
 index.html
 styles.css
 src/
@@ -98,7 +100,9 @@ frequencyToNote(freq, a4 = 440)
 noteToFrequency(midi, a4 = 440) -> Hz
 ```
 
-`midi`는 반올림된 정수 MIDI 노트 번호, `cents`는 -50 이상 49 이하의 정수, `exactFrequency`는 해당 MIDI 노트의 정확한 주파수다. 두 반음의 정확한 중간 주파수는 위쪽 노트로 반올림되어 `cents`가 -50이 된다(`Math.round`의 동작). 따라서 +50은 나오지 않는다. `a4`는 415 이상 466 이하를 기대하지만 강제하지 않는다.
+`midi`는 반올림된 정수 MIDI 노트 번호, `cents`는 -50 이상 50 이하의 정수, `exactFrequency`는 해당 MIDI 노트의 정확한 주파수다.
+
+경계 처리: `diff = exact - midi`는 `[-0.5, 0.5)` 범위이지만 `cents = Math.round(diff * 100)`에 두 번째 반올림이 걸리므로 -50과 +50이 모두 나올 수 있다. 두 반음의 정확한 중간(`diff === -0.5`)에서는 `Math.round`가 위쪽 노트로 올림하므로 `midi`가 위쪽 노트, `cents`가 -50이 된다. `a4`는 415 이상 466 이하를 기대하지만 강제하지 않는다.
 
 ### `tunings.js`
 
@@ -230,8 +234,9 @@ createUI(root) -> { render(state), onControlChange(handler) }
 - 길이가 2의 거듭제곱이 아니면 `RangeError`
 
 **`pitch.test.js`**
-- 순수 사인 E2(82.41), A4(440), A5(880) 검출. 허용 오차 ±0.5 cent
-- 톱니파·구형파에서 기본 주파수를 잡는지 (옥타브 아래로 내려가지 않는지)
+- 순수 사인 E2(82.41), A4(440), A5(880) 검출. 허용 오차 ±1 cent
+- 하모닉이 있는 파형은 허용 오차 ±5 cent. NSDF 피크에 포물선 보간을 적용해도 하모닉이 피크 모양을 비대칭으로 만들기 때문에 순수 사인만큼의 정밀도는 나오지 않는다
+- 톱니파·구형파에서 기본 주파수를 잡는지 (옥타브 아래위로 벗어나지 않는지)
 - 백색잡음 입력 시 `null`
 - 무음(모두 0) 입력 시 `null`
 - `minFrequency`/`maxFrequency` 밖의 신호는 `null`
@@ -240,7 +245,8 @@ createUI(root) -> { render(state), onControlChange(handler) }
 - A4 = 440에서 440 Hz → A4, 0 cent
 - A4 = 432, 415에서의 왕복 일치
 - `noteToFrequency(frequencyToNote(f).midi)`가 `exactFrequency`와 일치
-- 센트 경계: 두 반음의 정확한 중간 주파수에서 위쪽 노트 + `cents === -50`이 나오는지
+- 센트 경계: 두 반음의 정확한 중간 주파수에서 위쪽 노트 + `cents === -50`
+- 센트 상한: `diff`가 0.5에 근접한 주파수에서 `cents === 50`
 
 **`tunings.test.js`**
 - 각 프리셋 줄의 MIDI 번호가 표의 값과 일치
