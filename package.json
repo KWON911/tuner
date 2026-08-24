@@ -1,0 +1,11 @@
+{
+  "name": "tuner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "브라우저 크로매틱 튜너",
+  "scripts": {
+    "test": "node --test",
+    "serve": "npx --yes serve ."
+  }
+}
