@@ -67,7 +67,7 @@ function toggleMic() {
   engine
     .start()
     .then(() => {
-      if (engine.isRunning()) update({ message: LISTENING_MESSAGE });
+      if (engine.isRunning() && !messageLocked) update({ message: LISTENING_MESSAGE });
     })
     .catch((err) => {
       // getUserMedia 자체의 실패는 audio-engine.js 내부에서 onError로 이미 처리된다.
