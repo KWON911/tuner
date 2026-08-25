@@ -3,7 +3,7 @@ import { fft, ifft, nextPow2 } from './fft.js';
 export const DEFAULT_PITCH_OPTIONS = {
   minFrequency: 50,
   maxFrequency: 2000,
-  clarityThreshold: 0.8,
+  clarityThreshold: 0.5,
   rmsThreshold: 0.005,
   peakRatio: 0.9,
 };
