@@ -12,6 +12,10 @@ const LISTENING_MESSAGE = '실시간 음정 감지 중...';
 
 let state = { ...EMPTY_STATE };
 let tonePlayer = null;
+// warn 레벨 onError 메시지가 화면에 떠 있는 동안, handleResult의 매 33ms 틱이
+// 곧바로 그 메시지를 일상 상태 문구로 덮어써버리지 않도록 잠그는 플래그.
+// error 레벨 처리, 재생 시작/정지, 또는 새 onError 호출로만 풀린다.
+let messageLocked = false;
 
 const gate = createSilenceGate(SILENCE_HOLD_MS);
 
@@ -53,14 +57,28 @@ function toggleMic() {
   if (engine.isRunning()) {
     engine.stop();
     gate.reset();
+    messageLocked = false;
     update({ active: false, ...clearedDisplay(0), message: IDLE_MESSAGE });
     return;
   }
 
+  messageLocked = false;
   update({ active: true, message: '마이크를 여는 중...' });
-  engine.start().then(() => {
-    if (engine.isRunning()) update({ message: LISTENING_MESSAGE });
-  });
+  engine
+    .start()
+    .then(() => {
+      if (engine.isRunning()) update({ message: LISTENING_MESSAGE });
+    })
+    .catch((err) => {
+      // getUserMedia 자체의 실패는 audio-engine.js 내부에서 onError로 이미 처리된다.
+      // 여기서 잡는 것은 그 이후 단계(AudioContext resume, createAnalyser 등)에서
+      // 발생해 start()의 반환 프로미스가 그대로 reject되는 경우다. 처리하지 않으면
+      // active:true로 낙관적으로 켜둔 상태가 영영 풀리지 않고 UI가 멈춘다.
+      handleError({
+        level: 'error',
+        message: `마이크를 열 수 없습니다: ${err.name} — ${err.message}`,
+      });
+    });
 }
 
 function handleResult({ pitch, rms }) {
@@ -68,7 +86,7 @@ function handleResult({ pitch, rms }) {
   const volume = Math.min(100, Math.round(rms * 500));
 
   if (!held) {
-    update({ ...clearedDisplay(volume), message: LISTENING_MESSAGE });
+    update({ ...clearedDisplay(volume), ...(messageLocked ? {} : { message: LISTENING_MESSAGE }) });
     return;
   }
 
@@ -85,12 +103,16 @@ function handleResult({ pitch, rms }) {
     tuneState,
     activeStringLabel: string ? string.label : null,
     volume,
-    message:
-      tuneState === 'in-tune'
-        ? '✓ 정확한 음정입니다!'
-        : tuneState === 'flat'
-          ? '♭ 음이 낮습니다'
-          : '♯ 음이 높습니다',
+    ...(messageLocked
+      ? {}
+      : {
+          message:
+            tuneState === 'in-tune'
+              ? '✓ 정확한 음정입니다!'
+              : tuneState === 'flat'
+                ? '♭ 음이 낮습니다'
+                : '♯ 음이 높습니다',
+        }),
   });
 }
 
@@ -98,9 +120,14 @@ function handleError({ level, message }) {
   if (level === 'error') {
     engine.stop();
     gate.reset();
+    messageLocked = false;
     update({ active: false, ...clearedDisplay(0), message });
     return;
   }
+  // warn 레벨: 다음 handleResult 틱(최대 33ms 후)이 이 메시지를 즉시 덮어쓰지
+  // 않도록 잠근다. 사용자가 실제로 읽을 시간을 준 뒤, error 처리나 마이크
+  // 재시작/정지, 또는 다음 onError 호출로만 해제된다.
+  messageLocked = true;
   update({ message });
 }
 

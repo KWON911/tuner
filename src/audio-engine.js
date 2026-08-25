@@ -33,6 +33,7 @@ export function createAudioEngine({
   let buffer = null;
   let running = false;
   let pending = false;
+  let starting = false;
 
   function createWorker() {
     try {
@@ -76,55 +77,64 @@ export function createAudioEngine({
   }
 
   async function start() {
-    if (running) return;
+    // getUserMedia의 권한 프롬프트가 떠 있는 동안에는 running이 여전히 false이므로,
+    // 그 사이에 start()가 다시 호출되면(예: 사용자의 연속 클릭) 위의 running 체크만으로는
+    // 걸러지지 않는다. starting 플래그로 "설정이 진행 중"인 구간 전체를 보호해서
+    // 두 번째 호출이 마이크 스트림/AudioContext/Worker/타이머를 중복 생성하지 않게 한다.
+    if (running || starting) return;
+    starting = true;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    } catch (err) {
-      onError?.({ level: 'error', code: err.name, message: describeMicError(err) });
-      return;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } catch (err) {
+        onError?.({ level: 'error', code: err.name, message: describeMicError(err) });
+        return;
+      }
+
+      const context = getAudioContext();
+      if (context.state === 'suspended') await context.resume();
+
+      analyser = context.createAnalyser();
+      analyser.fftSize = fftSize;
+      // 시간 영역 데이터만 쓰므로 주파수 영역 평활화는 의미가 없다. 0으로 둔다.
+      analyser.smoothingTimeConstant = 0;
+      context.createMediaStreamSource(stream).connect(analyser);
+
+      buffer = new Float32Array(analyser.fftSize);
+
+      worker = createWorker();
+      if (worker) {
+        // worker.onmessage/onerror는 클로저로 캡처한 thisWorker와 현재의
+        // worker(모듈 상태)가 같은 인스턴스일 때만 처리한다. stop() 직후 start()가
+        // 다시 호출되면 새 worker가 생기는데, 방금 terminate()된 이전 worker가
+        // terminate 직전에 이미 postMessage해둔 결과가 뒤늦게 도착할 수 있다.
+        // running만 검사하면 그 시점엔 새 세션이 running=true라 통과해버려서
+        // 오래된 결과가 현재 세션의 onResult로 새어 들어간다. 인스턴스 동일성을
+        // 함께 검사하면 그 메시지는 thisWorker !== worker(새 worker)이므로 걸러진다.
+        const thisWorker = worker;
+        worker.onmessage = (event) => {
+          if (worker !== thisWorker) return;
+          pending = false;
+          if (running) onResult?.(event.data);
+        };
+        worker.onerror = () => {
+          if (worker !== thisWorker) return;
+          onError?.({
+            level: 'warn',
+            code: 'WORKER_ERROR',
+            message: '백그라운드 검출이 중단되어 메인 스레드로 전환합니다.',
+          });
+          thisWorker.terminate();
+          worker = null;
+          pending = false;
+        };
+      }
+
+      running = true;
+      timer = setInterval(tick, intervalMs);
+    } finally {
+      starting = false;
     }
-
-    const context = getAudioContext();
-    if (context.state === 'suspended') await context.resume();
-
-    analyser = context.createAnalyser();
-    analyser.fftSize = fftSize;
-    // 시간 영역 데이터만 쓰므로 주파수 영역 평활화는 의미가 없다. 0으로 둔다.
-    analyser.smoothingTimeConstant = 0;
-    context.createMediaStreamSource(stream).connect(analyser);
-
-    buffer = new Float32Array(analyser.fftSize);
-
-    worker = createWorker();
-    if (worker) {
-      // worker.onmessage/onerror는 클로저로 캡처한 thisWorker와 현재의
-      // worker(모듈 상태)가 같은 인스턴스일 때만 처리한다. stop() 직후 start()가
-      // 다시 호출되면 새 worker가 생기는데, 방금 terminate()된 이전 worker가
-      // terminate 직전에 이미 postMessage해둔 결과가 뒤늦게 도착할 수 있다.
-      // running만 검사하면 그 시점엔 새 세션이 running=true라 통과해버려서
-      // 오래된 결과가 현재 세션의 onResult로 새어 들어간다. 인스턴스 동일성을
-      // 함께 검사하면 그 메시지는 thisWorker !== worker(새 worker)이므로 걸러진다.
-      const thisWorker = worker;
-      worker.onmessage = (event) => {
-        if (worker !== thisWorker) return;
-        pending = false;
-        if (running) onResult?.(event.data);
-      };
-      worker.onerror = () => {
-        if (worker !== thisWorker) return;
-        onError?.({
-          level: 'warn',
-          code: 'WORKER_ERROR',
-          message: '백그라운드 검출이 중단되어 메인 스레드로 전환합니다.',
-        });
-        thisWorker.terminate();
-        worker = null;
-        pending = false;
-      };
-    }
-
-    running = true;
-    timer = setInterval(tick, intervalMs);
   }
 
   function stop() {
