@@ -1,4 +1,4 @@
-const PEAK_GAIN = 0.2;
+const PEAK_GAIN = 0.6;
 const ATTACK_SEC = 0.01;
 const RELEASE_SEC = 0.05;
 
