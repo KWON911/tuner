@@ -7,7 +7,7 @@
     --red: #ff3860;
     --yellow: #ffe040;
     --text: #c8d0e8;
-    --dim: #3a4060;
+    --dim: #7a86b0;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,6 +17,7 @@
     color: var(--text);
     font-family: 'Noto Sans KR', sans-serif;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
