@@ -131,7 +131,9 @@ function handleError({ level, message }) {
   update({ message });
 }
 
-function playTone(midi) {
-  tonePlayer ??= createTonePlayer(getAudioContext());
+async function playTone(midi) {
+  const context = getAudioContext();
+  if (context.state === 'suspended') await context.resume();
+  tonePlayer ??= createTonePlayer(context);
   tonePlayer.play(noteToFrequency(midi, state.a4));
 }

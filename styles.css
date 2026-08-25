@@ -196,7 +196,7 @@
     border-radius: 3px;
     background: var(--bg);
     color: var(--dim);
-    cursor: default;
+    cursor: pointer;
     letter-spacing: 0.05em;
     transition: all 0.1s;
     min-width: 30px;
@@ -378,14 +378,6 @@
 .string-btn.active.in-tune {
   color: var(--green);
   border-color: var(--green);
-}
-
-/* 키를 button으로 만들기 때문에 브라우저 기본 스타일을 눌러준다 */
-.key-btn {
-  background: var(--bg);
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
 }
 
 /* ---------- 안내 문구 ---------- */
