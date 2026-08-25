@@ -86,6 +86,7 @@
     font-size: 1.4rem;
     color: var(--dim);
     margin-top: 4px;
+    min-height: 25px;
   }
 
   .freq-display {
