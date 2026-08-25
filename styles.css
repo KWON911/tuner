@@ -185,23 +185,24 @@
     border-radius: 6px;
     padding: 16px;
     display: flex;
-    gap: 4px;
+    gap: 6px;
     justify-content: center;
     flex-wrap: wrap;
   }
 
   .key-btn {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 0.65rem;
-    padding: 6px 8px;
+    font-size: 0.9rem;
+    padding: 10px 10px;
     border: 1px solid var(--border);
-    border-radius: 3px;
+    border-radius: 4px;
     background: var(--bg);
     color: var(--dim);
     cursor: pointer;
     letter-spacing: 0.05em;
     transition: all 0.1s;
-    min-width: 30px;
+    min-width: 42px;
+    min-height: 42px;
     text-align: center;
   }
   .key-btn.active {
