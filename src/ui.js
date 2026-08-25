@@ -22,7 +22,6 @@ export function createUI(handlers) {
     a4Slider: document.getElementById('a4Slider'),
     a4Value: document.getElementById('a4Value'),
     a4Reset: document.getElementById('a4Reset'),
-    feedbackWarning: document.getElementById('feedbackWarning'),
     fileBanner: document.getElementById('fileBanner'),
   };
 
@@ -129,7 +128,6 @@ export function createUI(handlers) {
     if (touched.has('active')) {
       el.startBtn.textContent = next.active ? '■ 중지' : '▶ 마이크 시작';
       el.startBtn.classList.toggle('active', next.active);
-      el.feedbackWarning.hidden = !next.active;
     }
 
     if (touched.has('message')) {

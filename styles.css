@@ -384,26 +384,16 @@
 
 /* ---------- 안내 문구 ---------- */
 
-.feedback-warning,
 .file-banner {
   border-radius: 4px;
   padding: 8px 12px;
   font-size: 0.75rem;
   line-height: 1.5;
   text-align: center;
-}
-
-.feedback-warning {
-  border: 1px solid var(--border);
-  color: var(--dim);
-}
-
-.file-banner {
   border: 1px solid var(--yellow);
   color: var(--yellow);
 }
 
-.feedback-warning[hidden],
 .file-banner[hidden] {
   display: none;
 }
