@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>크로매틱 튜너</title>
+
+<!-- PWA: 홈 화면에 추가 시 브라우저 UI 없이 독립 실행 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0c10">
+
+<!-- iOS Safari는 manifest.json의 display:standalone을 해석하지 않고,
+     아래 레거시 메타 태그만으로 홈 화면 독립 실행 여부를 판단한다. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="크로매틱 튜너">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
