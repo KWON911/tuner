@@ -19,6 +19,10 @@ let messageLocked = false;
 
 const gate = createSilenceGate(SILENCE_HOLD_MS);
 
+// iOS Safari는 페이지에 터치 이벤트 리스너가 하나도 없으면 :active 의사
+// 클래스를 아예 발동시키지 않는다. 빈 리스너 하나로 버튼 눌림 효과를 켠다.
+document.addEventListener('touchstart', () => {}, { passive: true });
+
 const ui = createUI({
   onToggleMic: toggleMic,
   onTuningChange: (tuningId) => update({ tuningId }),
