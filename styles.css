@@ -205,6 +205,9 @@
     min-height: 42px;
     text-align: center;
   }
+  .key-btn:hover {
+    border-color: var(--accent);
+  }
   .key-btn:active {
     border-color: var(--accent);
     color: var(--accent);
