@@ -205,6 +205,11 @@
     min-height: 42px;
     text-align: center;
   }
+  .key-btn:active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.18);
+  }
   .key-btn.active {
     border-color: var(--accent);
     color: var(--accent);
@@ -371,6 +376,12 @@
 
 .string-btn:hover {
   border-color: var(--accent);
+}
+
+.string-btn:active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,229,255,0.18);
 }
 
 .string-btn.active {
