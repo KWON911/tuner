@@ -77,6 +77,16 @@
 
 </div>
 
+<!-- Chrome/Firefox는 file:// 출처에서 type="module" 스크립트 로드 자체를
+     막는다(CORS). 그러면 아래 main.js가 아예 실행되지 않아, main.js 안에서
+     location.protocol을 검사해 배너를 띄우는 방식은 정작 그 상황에서
+     작동하지 않는다. 모듈이 아닌 이 일반 스크립트는 file://에서도 실행되므로
+     여기서 직접 처리한다. -->
+<script>
+  if (location.protocol === 'file:') {
+    document.getElementById('fileBanner').hidden = false;
+  }
+</script>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

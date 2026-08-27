@@ -35,7 +35,8 @@ const engine = createAudioEngine({
   onError: handleError,
 });
 
-if (location.protocol === 'file:') ui.showBanner();
+// file:// 배너는 index.html의 일반 스크립트가 직접 띄운다(main.js는 모듈
+// 스크립트라 Chrome/Firefox의 file:// 출처에서는 애초에 실행되지 않는다).
 
 ui.render(state);
 

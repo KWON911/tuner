@@ -22,7 +22,6 @@ export function createUI(handlers) {
     a4Slider: document.getElementById('a4Slider'),
     a4Value: document.getElementById('a4Value'),
     a4Reset: document.getElementById('a4Reset'),
-    fileBanner: document.getElementById('fileBanner'),
   };
 
   let previous = null;
@@ -156,9 +155,5 @@ export function createUI(handlers) {
     }
   }
 
-  function showBanner() {
-    el.fileBanner.hidden = false;
-  }
-
-  return { render, showBanner };
+  return { render };
 }
