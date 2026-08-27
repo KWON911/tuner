@@ -1,5 +1,7 @@
 import { detectPitch, DEFAULT_PITCH_OPTIONS } from './pitch.js';
 
+const WORKER_TIMEOUT_MS = 1000;
+
 let sharedContext = null;
 
 /**
@@ -34,6 +36,7 @@ export function createAudioEngine({
   let running = false;
   let pending = false;
   let starting = false;
+  let pendingTimeout = null;
 
   function createWorker() {
     try {
@@ -74,6 +77,20 @@ export function createAudioEngine({
       { samples, sampleRate: sharedContext.sampleRate, options: pitchOptions, rms },
       [samples.buffer]
     );
+
+    // 워커 응답이 아예 오지 않는 비정상 상황(스레드 정지, 메시지 유실 등)에
+    // 대비한 워치독. 정상 상황의 검출은 보통 수 ms 안에 끝나므로 절대
+    // 발동하지 않는다. 발동하면 pending을 풀어 다음 틱부터 다시 시도한다.
+    clearTimeout(pendingTimeout);
+    pendingTimeout = setTimeout(() => {
+      if (!pending) return;
+      pending = false;
+      onError?.({
+        level: 'warn',
+        code: 'WORKER_TIMEOUT',
+        message: '검출 응답이 지연되어 다음 프레임부터 다시 시도합니다.',
+      });
+    }, WORKER_TIMEOUT_MS);
   }
 
   async function start() {
@@ -84,15 +101,19 @@ export function createAudioEngine({
     if (running || starting) return;
     starting = true;
     try {
+      // iOS Safari는 AudioContext.resume()이 사용자 제스처의 동기 호출 구간
+      // 안에서 시작되어야 실제로 풀린다. getUserMedia의 await(권한 프롬프트)를
+      // 먼저 거치면 그 구간을 벗어나, resume()이 에러 없이 반환되고도 context가
+      // 계속 suspended로 남을 수 있다. 그래서 컨텍스트 생성·재개를 먼저 한다.
+      const context = getAudioContext();
+      if (context.state === 'suspended') await context.resume();
+
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       } catch (err) {
         onError?.({ level: 'error', code: err.name, message: describeMicError(err) });
         return;
       }
-
-      const context = getAudioContext();
-      if (context.state === 'suspended') await context.resume();
 
       analyser = context.createAnalyser();
       analyser.fftSize = fftSize;
@@ -114,11 +135,13 @@ export function createAudioEngine({
         const thisWorker = worker;
         worker.onmessage = (event) => {
           if (worker !== thisWorker) return;
+          clearTimeout(pendingTimeout);
           pending = false;
           if (running) onResult?.(event.data);
         };
         worker.onerror = () => {
           if (worker !== thisWorker) return;
+          clearTimeout(pendingTimeout);
           onError?.({
             level: 'warn',
             code: 'WORKER_ERROR',
@@ -140,6 +163,8 @@ export function createAudioEngine({
   function stop() {
     running = false;
     pending = false;
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
     clearInterval(timer);
     timer = null;
 
