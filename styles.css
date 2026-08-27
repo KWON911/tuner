@@ -241,6 +241,11 @@
     transition: all 0.2s;
   }
   .btn-start:hover { background: rgba(0,229,255,0.08); }
+  .btn-start:disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+  }
   .btn-start.active {
     border-color: var(--red);
     color: var(--red);

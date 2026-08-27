@@ -155,5 +155,15 @@ export function createUI(handlers) {
     }
   }
 
-  return { render };
+  /**
+   * 마이크 시작 요청이 진행 중인 동안 시작 버튼을 비활성화한다.
+   * getUserMedia 권한 프롬프트가 떠 있는 동안은 active 상태가 아직 true로
+   * 반영되기 전이라(엔진이 running이 아니므로) 상태 diff만으로는 이 구간을
+   * 표현할 수 없어, 렌더 상태와 별개로 직접 제어한다.
+   */
+  function setBusy(busy) {
+    el.startBtn.disabled = busy;
+  }
+
+  return { render, setBusy };
 }
